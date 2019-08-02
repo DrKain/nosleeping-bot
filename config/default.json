@@ -1,0 +1,14 @@
+{
+  "prefix" : "~",
+  "time_between_check" : 600000,
+  "bottoken" : "",
+  "botcid" : "",
+  "botadmin" : "",
+  "store" : {
+    "users" : "./datastore/users.db"
+  },
+  "channel" : {
+    "start" : "",
+    "confirm" : ""
+  }
+}

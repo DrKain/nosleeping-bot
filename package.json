@@ -1,0 +1,9 @@
+{
+  "name": "sleep-challenge-bot",
+  "version": "0.0.1",
+  "dependencies": {
+    "config": "^3.2.2",
+    "discord.js": "^11.5.1",
+    "nedb": "^1.8.0"
+  }
+}
