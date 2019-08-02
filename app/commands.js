@@ -1,4 +1,9 @@
 module.exports = {
+    'help' : function( db, cmd, args, user, message ){
+        message.channel.send(
+            `Use ~start to start the challenge, ~best to view your best time and ~leaderboard to view the leaderboard`
+        )
+    },
     // Admin Only!
     // - Used to verify command arguments and user object.
     'verify' : function( db, cmd, args, user, message ){
@@ -12,9 +17,12 @@ module.exports = {
         if(args[0] === "user"){
             message.channel.send("User document: ```" + JSON.stringify(user, null, 2) + "```");
         }
-        if(args[0] === 'channel'){
-            message.channel.send("Dumped to console");
-            console.log( message.channel );
+        if(args[0] === 'channels'){
+            var st = db.config.get("channel.start");
+            var rm = db.config.get("channel.reminder");
+
+            db.sendToChannel(rm, "This channel is set for reminders");
+            db.sendToChannel(st, "This channel is set for starting");
         }
     },
     // Admin Only!
@@ -68,11 +76,26 @@ module.exports = {
     },
     // All Users
     'leaderboard' : function( db, cmd, args, user, message ){
-        // TODO: This
+        db.users.find({ }).sort({
+            'challenge.best_time' : 1
+        }).limit(10).exec(function(err, docs){
+            if(err){
+                console.log(err);
+                message.channel.send("Error loading leaderboard...");
+            } else {
+                var list = ['Challenge Leaderboard:\n```'];
+                docs.forEach(function( item ){
+                    list.push(`${ (item.challenge.best_time / 60000).toFixed(2) } minutes - ${item.name}\n`);
+                });
+                list.push('```');
+                message.channel.send(list.join(''));
+            }
+        })
     },
     // All Users!
     // Check in. Change this to whatever you want.
     'checkin' : function( db, cmd, args, user, message ){
+        var last_verified = user.challenge.last_check;
         if( user.challenge.ongoing === true ){
             db.updateUser({ id : user.uid }, {
                 $set : {
@@ -80,19 +103,23 @@ module.exports = {
                 }
             }).then(function(){
                 // Calculating time used in messages.
-                var time_check  = db.time_between(user.challenge.last_check);
-                var time_start  = db.time_between(user.challenge.start_time);
+                var time_check  = db.time_between( user.challenge.last_check );
+                var time_start  = db.time_between( user.challenge.start_time );
                 var time_spare  = ((db.check_time - time_check.milliseconds) / 60000).toFixed(2) + " minutes";
+                var time_last   = db.time_between( last_verified, user.challenge.start_time );
+
                 if( time_check.milliseconds > db.check_time ){
                     db.updateUser({ id : user.uid }, {
                         $set : {
+                            'warning' : false,
                             'challenge.ongoing' : false,
-                            'challenge.best_time' : time_start.milliseconds > user.challenge.best_time ? time_start.milliseconds : user.challenge.best_time
+                            'challenge.best_time' : time_start.milliseconds > user.challenge.best_time ? time_last.milliseconds : user.challenge.best_time
                         }
                     }).then(function(){
                         // Check in too slow
                         message.channel.send(
-                            `Sorry ${user.name}, you were ${time_check.seconds} seconds too slow. You finished the challenge after ${time_start.minutes} minutes!`
+                            `Sorry ${user.name}, you were ${time_check.seconds} seconds too slow. You finished the challenge after ${ time_check.minutes } minutes!\n` +
+                            `Your total time (based on last check-in) is ${time_last.seconds} seconds`
                         )
                     }, function(err){
                         // Unable to fail challenge

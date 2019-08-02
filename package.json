@@ -5,5 +5,8 @@
     "config": "^3.2.2",
     "discord.js": "^11.5.1",
     "nedb": "^1.8.0"
+  },
+  "scripts": {
+    "start" : "node index.js"
   }
 }

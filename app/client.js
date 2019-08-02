@@ -6,6 +6,47 @@ module.exports = function(users){
     var config      = require('config');
     var command     = require('./commands');
 
+    // Time between
+    var time_between = function( then, now = +new Date()){
+        var btw = now - then;
+        return {
+            milliseconds    : btw,
+            seconds         : ~~(btw / 1000),
+            minutes         : ~~(btw / 60000)
+        }
+    };
+
+    // Warn user they are about to expire
+    var warnUser = function( user ){
+
+        updateUser({ id : user.uid }, {
+            $set : { warning : true }
+        }).then(function(){
+            var rem = config.get("channel.reminder");
+            sendToChannel( rem, `<@${user.uid}> you have less than 1 minute before your time runs out!`);
+        }, function(err){
+            console.warn(err);
+        });
+
+    };
+
+    // Set up a timer
+    var timer = function(){
+        console.log("Timer Polling");
+
+        users.find({ 'challenge.ongoing' : true, warning : false }, function(err, docs){
+
+            docs.forEach(function( user ){
+                var time_check = time_between( user.challenge.last_check );
+                console.log(`${user.name} has not checked in for ${time_check.minutes} minutes`);
+                if(time_check.minutes >= 9) warnUser( user );
+            });
+
+            setTimeout(timer, 10000); // Every 10 seconds after timer has finished.
+        });
+
+    };
+
     // Create a user!
     var createUser = function( author ){
         return new Promise(function(resolve){
@@ -14,6 +55,7 @@ module.exports = function(users){
                 banned  : false,
                 name    : author.username,
                 avatar  : author.avatar,
+                warning : false,
                 challenge : {
                     completed       : 0,
                     start_time      : +new Date(),
@@ -52,6 +94,15 @@ module.exports = function(users){
         })
     };
 
+    // Send to specific channel
+    var sendToChannel = function( id, message ){
+        client.guilds.forEach(function( guild ){
+            guild.channels.forEach(function( channel ){
+                if(channel.id === id ) channel.send( message );
+            })
+        })
+    };
+
     // Information to pass to commands.js
     var _db_ = {
         users       : users,
@@ -59,19 +110,13 @@ module.exports = function(users){
         getUser     : getUser,
         config      : config,
         check_time  : config.get('time_between_check'),
-        time_between: function( then, now = +new Date()){
-            var btw = now - then;
-            return {
-                milliseconds    : btw,
-                seconds         : ~~(btw / 1000),
-                minutes         : ~~(btw / 60000)
-            }
-        }
+        time_between: time_between,
+        sendToChannel : sendToChannel
     };
 
     client.on('ready', function( ){
         console.log(`Connected as ${client.user.tag}`);
-        console.log(`Invite using : https://discordapp.com/api/oauth2/authorize?client_id=${ config.get('botcid') }&scope=bot&permissions=337984`)
+        console.log(`Invite using : https://discordapp.com/api/oauth2/authorize?client_id=${ config.get('botcid') }&scope=bot&permissions=337984`);
     });
 
     client.on('message', function( message ){
@@ -90,12 +135,12 @@ module.exports = function(users){
             // Verify command was assigned
             if(!cmd) return;
 
-            // Ignore banned users
-            if(user.banned) return;
-
-            // Verify command exists, Load user from database, Execute command
+            // Verify command exists, Load user from database
             if(command[cmd]){
                 getUser( message.author ).then(function( user ){
+                    // Ignore banned users
+                    if(user.banned) return;
+                    // Execute command
                     command[cmd]( _db_, cmd, args, user, message );
                 })
             }
@@ -105,5 +150,7 @@ module.exports = function(users){
 
     // Log in using bot token from /config/default.json
     client.login(config.get('bottoken'));
+    // Start the timer.
+    timer();
 
 };
