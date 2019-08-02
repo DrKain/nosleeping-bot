@@ -23,6 +23,7 @@ module.exports = function(users){
             $set : { warning : true }
         }).then(function(){
             var rem = config.get("channel.reminder");
+            console.log("Sent warning to " + user.name);
             sendToChannel( rem, `<@${user.uid}> you have less than 1 minute before your time runs out!`);
         }, function(err){
             console.warn(err);

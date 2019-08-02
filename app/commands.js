@@ -99,6 +99,7 @@ module.exports = {
         if( user.challenge.ongoing === true ){
             db.updateUser({ id : user.uid }, {
                 $set : {
+                    'warning' : false,
                     "challenge.last_check" : +new Date()
                 }
             }).then(function(){
@@ -106,12 +107,11 @@ module.exports = {
                 var time_check  = db.time_between( user.challenge.last_check );
                 var time_start  = db.time_between( user.challenge.start_time );
                 var time_spare  = ((db.check_time - time_check.milliseconds) / 60000).toFixed(2) + " minutes";
-                var time_last   = db.time_between( last_verified, user.challenge.start_time );
+                var time_last   = db.time_between( user.challenge.start_time, last_verified );
 
                 if( time_check.milliseconds > db.check_time ){
                     db.updateUser({ id : user.uid }, {
                         $set : {
-                            'warning' : false,
                             'challenge.ongoing' : false,
                             'challenge.best_time' : time_start.milliseconds > user.challenge.best_time ? time_last.milliseconds : user.challenge.best_time
                         }

@@ -3,12 +3,12 @@
   "time_between_check" : 600000,
   "bottoken" : "",
   "botcid" : "",
-  "botadmin" : "",
+  "botadmin" : "114329476678025219",
   "store" : {
     "users" : "./datastore/users.db"
   },
   "channel" : {
     "start" : "",
-    "reminder" : ""
+    "reminder" : "605877916378726519"
   }
 }
