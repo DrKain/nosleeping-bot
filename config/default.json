@@ -1,14 +1,18 @@
 {
-  "prefix" : "~",
-  "time_between_check" : 600000,
-  "bottoken" : "",
-  "botcid" : "",
-  "botadmin" : "114329476678025219",
-  "store" : {
-    "users" : "./datastore/users.db"
-  },
-  "channel" : {
-    "start" : "",
-    "reminder" : "605877916378726519"
-  }
+    "prefix": "~",
+    "seconds_between_check": 600,
+    "seconds_to_remind": 60,
+    "admins": [
+        "456594537645867029"
+    ],
+    "bot": {
+        "cid": "",
+        "token": ""
+    },
+    "datastore": "./data/users.db",
+    "guild": "551327428203511809",
+    "channel": {
+        "start": "822355099111129108",
+        "reminder": "822355099111129108"
+    }
 }

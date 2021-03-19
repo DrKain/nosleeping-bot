@@ -7,6 +7,10 @@
     "nedb": "^1.8.0"
   },
   "scripts": {
-    "start" : "node index.js"
+    "start": "ts-node index.ts"
+  },
+  "devDependencies": {
+    "@types/config": "0.0.38",
+    "@types/nedb": "^1.8.11"
   }
 }
